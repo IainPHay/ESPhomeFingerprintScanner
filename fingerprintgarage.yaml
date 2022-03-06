@@ -1,0 +1,149 @@
+# Board
+esphome:
+  name: fingerprintgarage
+  platform: ESP8266
+  board: d1_mini
+# Wifi 
+wifi:
+  ssid: "#####"
+  password: "#########"
+  manual_ip:
+    static_ip: #######
+    gateway: ######
+    subnet: ######
+
+captive_portal:
+logger:
+# Setup services to register fingerprints etc.
+api:
+  services:
+  - service: enroll
+    variables:
+      finger_id: int
+      num_scans: int
+    then:
+      - fingerprint_grow.enroll:
+          finger_id: !lambda 'return finger_id;'
+          num_scans: !lambda 'return num_scans;'
+  - service: cancel_enroll
+    then:
+      - fingerprint_grow.cancel_enroll:
+  - service: delete
+    variables:
+      finger_id: int
+    then:
+      - fingerprint_grow.delete:
+          finger_id: !lambda 'return finger_id;'
+  - service: delete_all
+    then:
+      - fingerprint_grow.delete_all:
+ota:  
+web_server:
+
+uart:
+  tx_pin: D0 #connect to grow sensor rx
+  rx_pin: D1 #connect to grow sensor tx
+  baud_rate: 57600
+
+fingerprint_grow:
+  sensing_pin: D2 #connect to sense pin on grow
+  on_finger_scan_matched:
+   # If a local relay was added you could control on one wemos, this calls HA service, delay is needed  to stop it retriggering too fast
+    - homeassistant.service:
+        service: cover.toggle
+        data:
+          entity_id: cover.garage_door
+    - delay: 1000ms
+    # pulses blue for registered print
+    - fingerprint_grow.aura_led_control:
+        state: BREATHING
+        speed: 200
+        color: BLUE
+        count: 1
+    # sensor set to registered for use in HA
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Registered print"
+    - lambda: |-
+        # use the id numbers to let HA know whose fingerprint this is
+        if (finger_id == 0) {
+          id(fingerprint_username).publish_state("User1");
+        } else if (finger_id == 1) {
+          id(fingerprint_username).publish_state("User2");
+        } else {
+          id(fingerprint_username).publish_state("Unknown");
+        };
+    - delay: 10s
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Waiting for scan"
+  on_finger_scan_unmatched:
+    - fingerprint_grow.aura_led_control:
+        state: FLASHING
+        speed: 25
+        color: RED
+        count: 2
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Unauthorized"
+    - delay: 3s
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Waiting for scan"
+  on_enrollment_scan:
+    - fingerprint_grow.aura_led_control:
+        state: FLASHING
+        speed: 25
+        color: BLUE
+        count: 2
+    - fingerprint_grow.aura_led_control:
+        state: ALWAYS_ON
+        speed: 0
+        color: PURPLE
+        count: 0
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Finger scanned"
+  on_enrollment_done:
+    - fingerprint_grow.aura_led_control:
+        state: BREATHING
+        speed: 100
+        color: BLUE
+        count: 2
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Enrolled a fingerprint"
+  on_enrollment_failed:
+    - fingerprint_grow.aura_led_control:
+        state: FLASHING
+        speed: 25
+        color: RED
+        count: 4
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Failed to enroll fingerprint"
+    
+sensor:
+  - platform: fingerprint_grow
+    fingerprint_count:
+      name: "Garage Fingerprint Count"
+    last_finger_id:
+      name: "Garage Fingerprint Last Finger ID"
+    last_confidence:
+      name: "Garage Fingerprint Last Confidence"
+    status:
+      name: "Garage Fingerprint Status"
+    capacity:
+      name: "Garage Fingerprint Capacity"
+    security_level:
+      name: "Garage Fingerprint Security Level"
+
+text_sensor:
+  - platform: template
+    id:       fingerprint_username
+    name:     "Who Scanned Last"
+    update_interval: 30s
+  - platform: template
+    id: fingerprint_state
+    name: "Garage Fingerprint State"
+  
