@@ -17,7 +17,8 @@ I soldered cat6 cable onto the leads to run through wall and used the same on th
 
 Connection of grow sensor is easy, 3.3v line, ground, 5v, sensing pin for when finger on scanner and TX and RX.
 
-![image](https://user-images.githubusercontent.com/25230544/156944397-8791e437-3671-465c-8656-f6b2e8b38d2f.png)
+![image](https://user-images.githubusercontent.com/25230544/156945858-f2b04711-8bfb-47a6-ba35-48318b1b69ce.png)
+
 
 ![image](https://user-images.githubusercontent.com/25230544/156945685-f11ac0e9-2cdf-4801-85d5-9bd05bb78559.png)
 
