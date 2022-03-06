@@ -19,6 +19,9 @@ Connection of grow sensor is easy, 3.3v line, ground, 5v, sensing pin for when f
 
 ![image](https://user-images.githubusercontent.com/25230544/156944397-8791e437-3671-465c-8656-f6b2e8b38d2f.png)
 
+![image](https://user-images.githubusercontent.com/25230544/156945685-f11ac0e9-2cdf-4801-85d5-9bd05bb78559.png)
+
+
 
 To add a fingerprint you call ESPHome: fingerprintgarage_enroll in this example and set the number of scans and id number and pop your finger or thumb on
 
