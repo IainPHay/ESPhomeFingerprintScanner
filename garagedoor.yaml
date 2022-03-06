@@ -1,0 +1,71 @@
+esphome:
+  name: garagedoor
+  platform: ESP8266
+  board: d1_mini
+wifi:
+  ssid: "#####"
+  password: "######"
+  manual_ip:
+    static_ip: #####
+    gateway: ####
+    subnet: ####
+
+captive_portal:
+logger:
+api:
+ota:
+web_server:
+
+switch:
+  - platform: gpio
+    pin: D1
+    name: "Garage Door Switch"
+    id: relay
+  - platform: template
+    name: "Garage Remote"
+    internal: true
+    turn_on_action:
+    - switch.turn_on: relay
+    - delay: 500ms
+    - switch.turn_off: relay
+
+cover:
+  - platform: template
+    device_class: garage
+    name: Garage Door
+    lambda: !lambda |-
+      if (id(garagedoorstate).state) {
+        return COVER_OPEN;
+      } else {
+        return COVER_CLOSED;
+      }
+    open_action:
+      then:
+        if:
+          condition:
+            binary_sensor.is_off: garagedoorstate
+          then:
+            - switch.turn_on: relay
+            - delay: 500ms
+            - switch.turn_off: relay
+    close_action:
+      then:
+        if:
+          condition:
+            binary_sensor.is_on: garagedoorstate
+          then:
+            - switch.turn_on: relay
+            - delay: 500ms
+            - switch.turn_off: relay
+    stop_action:
+      - switch.turn_on: relay
+      - delay: 500ms
+      - switch.turn_off: relay
+      
+binary_sensor:
+  - platform: homeassistant
+    name: "Garage Door State"
+    entity_id: binary_sensor.garage_door
+    id: garagedoorstate
+    
+  
